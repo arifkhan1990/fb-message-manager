@@ -8,9 +8,20 @@ export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message: Message) => {
     if (message.type === 'UPDATE_STATS') {
       // Forward stats to popup if it's open
-      browser.runtime.sendMessage(message).catch(() => {
-        // Popup might not be open, ignore error
-      });
+      forwardStatsToPopup(message);
     }
   });
 });
+
+/**
+ * Function to forward stats to the popup.
+ * @param message - The message containing the stats to be forwarded.
+ */
+async function forwardStatsToPopup(message: Message) {
+  try {
+    await browser.runtime.sendMessage(message);
+  } catch (error) {
+    // Log the error for debugging purposes
+    console.error('Failed to send message to popup:', error);
+  }
+}

@@ -1,7 +1,9 @@
 import { browser } from 'wxt/browser';
 import type { ChatInfo } from './types';
 import { i18n } from './i18n';
-
+import { LanguageDetector, FacebookLanguageDetector } from './services/LanguageService';
+import { UIService, FacebookUIService } from './services/UIService';
+import "../entrypoints/popup/App.css";
 interface ChatElement {
   element: HTMLElement;
   title: string;
@@ -15,59 +17,70 @@ interface Message {
     selectedCount: number;
     totalChats: number;
   }
+  language?: string;
 }
 
 export class ChatManager {
   private chats: ChatInfo[] = [];
   private selectionMode = false;
   private sidebar: HTMLElement | null = null;
-  private language: string = 'en'; // Default language
+  private language: string = 'en';
+  private readonly languageDetector: LanguageDetector;
+  private readonly uiService: UIService;
+
+  constructor(
+    languageDetector: LanguageDetector = new FacebookLanguageDetector(),
+    uiService: UIService = new FacebookUIService()
+  ) {
+    this.languageDetector = languageDetector;
+    this.uiService = uiService;
+  }
 
   async initialize() {
     try {
-      // Detect Facebook's language
-      await this.detectLanguage();
+      // Detect initial language
+      this.language = await this.languageDetector.detectLanguage();
+      await i18n.changeLanguage(this.language);
       
-      // Check if we're on the Messages page
+      // Start monitoring language changes
+      this.languageDetector.startLanguageMonitoring(async (newLang) => {
+        this.language = newLang;
+        await i18n.changeLanguage(newLang);
+        
+        // Notify popup about language change
+        chrome.runtime.sendMessage({
+          type: 'LANGUAGE_CHANGED',
+          language: newLang
+        });
+      });
+      
       if (!this.isMessagesPage()) {
         this.showNavigationPrompt();
         return;
       }
 
+      // Add message listener
+      chrome.runtime.onMessage.addListener(
+        (message: Message, sender, sendResponse) => {
+          // Now TypeScript knows 'message' has properties defined in the 'Message' interface
+          if ("action" in message) {
+            this.handleMessage(message);
+          }
+          
+          return true; // Required if sendResponse is used asynchronously
+        }
+      );
+      
       // Create and show sidebar
       this.createSidebar();
       this.showSidebar();
       this.observeChatList();
       await this.updateChatList();
       
-      // Add message listener
-      browser.runtime.onMessage.addListener(
-        (message: unknown, sender: browser.runtime.MessageSender, sendResponse: (response?: any) => void) => {
-          // Ensure 'message' is of type 'Message'
-          if (typeof message === "object" && message !== null && "action" in message) {
-            const msg = message as Message;
-            this.handleMessage(msg);
-          }
-      
-          return true; // Required if sendResponse is used asynchronously
-        }
-      );
-      
     } catch (error) {
       console.error('Failed to initialize ChatManager:', error);
-      this.showError(this.getTranslation('Failed to initialize. Please try refreshing the page.'));
+      this.uiService.showError(this.getTranslation('Failed to initialize'));
     }
-  }
-
-  private async detectLanguage() {
-    // Try to detect Facebook's language setting
-    const htmlLang = document.documentElement.lang;
-    const metaLang = document.querySelector('meta[property="og:locale"]')?.getAttribute('content');
-    const detectedLang = htmlLang || metaLang?.split('_')[0] || 'en';
-    
-    // Update i18n language
-    await i18n.changeLanguage(detectedLang);
-    this.language = detectedLang;
   }
 
   private isMessagesPage(): boolean {
@@ -95,58 +108,6 @@ export class ChatManager {
     });
   }
 
-  private showLoadingIndicator(action: string) {
-    const loading = document.createElement('div');
-    loading.className = 'chat-manager-loading';
-    loading.innerHTML = `
-      <div class="loading-spinner"></div>
-      <p>${this.getTranslation(action)}</p>
-    `;
-    document.body.appendChild(loading);
-    return loading;
-  }
-
-  private hideLoadingIndicator(element: HTMLElement) {
-    element.classList.add('fade-out');
-    setTimeout(() => {
-      document.body.removeChild(element);
-    }, 300);
-  }
-
-  private showError(message: string) {
-    const error = document.createElement('div');
-    error.className = 'chat-manager-error';
-    error.textContent = message;
-    document.body.appendChild(error);
-
-    setTimeout(() => {
-      error.classList.add('fade-out');
-      setTimeout(() => {
-        document.body.removeChild(error);
-      }, 300);
-    }, 5000);
-  }
-
-  private async waitForElement(selector: string): Promise<Element> {
-    return new Promise((resolve) => {
-      if (document.querySelector(selector)) {
-        return resolve(document.querySelector(selector)!);
-      }
-
-      const observer = new MutationObserver(() => {
-        if (document.querySelector(selector)) {
-          observer.disconnect();
-          resolve(document.querySelector(selector)!);
-        }
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
-    });
-  }
-
   private createSidebar() {
     // Create main sidebar container
     this.sidebar = document.createElement('div');
@@ -163,7 +124,7 @@ export class ChatManager {
         <button class="action-button primary" id="toggle-selection">
           ${this.getTranslation('Select Chats')}
         </button>
-        <button class="action-button" id="select-all">
+        <button class="action-button secondary" id="select-all">
           ${this.getTranslation('Select All')}
         </button>
         <div class="action-group">
@@ -193,22 +154,12 @@ export class ChatManager {
   private showSidebar() {
     if (this.sidebar) {
       this.sidebar.classList.add('visible');
-      // Also update any toggle button that might exist
-      const toggleButton = document.querySelector('.chat-manager-toggle');
-      if (toggleButton instanceof HTMLElement) {
-        toggleButton.innerHTML = '✕';
-      }
     }
   }
 
   private hideSidebar() {
     if (this.sidebar) {
       this.sidebar.classList.remove('visible');
-      // Update toggle button
-      const toggleButton = document.querySelector('.chat-manager-toggle');
-      if (toggleButton instanceof HTMLElement) {
-        toggleButton.innerHTML = '📝';
-      }
     }
   }
 
@@ -318,12 +269,13 @@ export class ChatManager {
     this.updatePopupStats();
   }
 
-  private getTranslation(key: string, options?: any): string {
-    return i18n.t(key, options);
+  private getTranslation(key: string): string {
+    return i18n.t(key);
   }
 
   private observeChatList() {
     const observer = new MutationObserver(() => {
+      observer.disconnect(); // Disconnect to avoid multiple updates
       this.updateChatList();
     });
 
@@ -333,42 +285,59 @@ export class ChatManager {
     }
   }
 
-  private async updateChatList() {
-    // Find all chat elements in Facebook's chat list
-    const chatElements = document.querySelectorAll('[role="row"]');
-    const newChats: ChatInfo[] = [];
-
-    chatElements.forEach((chat) => {
-      if (chat instanceof HTMLElement) {
-        // Extract chat information
-        const titleElement = chat.querySelector('[role="gridcell"]');
-        const title = titleElement?.textContent?.trim() || 'Unknown Chat';
-        const lastMessage = chat.querySelector('[role="gridcell"]:nth-child(2)')?.textContent?.trim();
-        const avatar = chat.querySelector('img')?.src;
-        
-        // Use a more reliable ID generation
-        const id = chat.getAttribute('data-testid') || 
-                  chat.getAttribute('id') || 
-                  `chat-${title}-${Date.now()}`;
-        
-        newChats.push({ 
-          id, 
-          title, 
-          avatar, 
-          lastMessage,
-          element: chat
-        });
-
-        // Maintain selection state when updating list
-        if (this.selectionMode && this.isSelected(id)) {
-          chat.classList.add('selected');
-        }
+  private async updateChatList(): Promise<void> {
+    try {
+      // Clear existing chats
+      this.chats = [];
+      
+      // Find all chat elements in Facebook's chat list
+      const chatElements = document.querySelectorAll('[role="row"]');
+      if (chatElements.length === 0) {
+        console.warn('No chat elements found. Waiting for the chat list to load.');
+        await this.waitForElement('[role="row"]');
+        return this.updateChatList(); // Retry updating the chat list
       }
-    });
+      
+      const newChats: ChatInfo[] = [];
 
-    this.chats = newChats;
-    this.updateSidebarChatList();
-    this.updateSelectionUI();
+      chatElements.forEach((chat) => {
+        if (chat instanceof HTMLElement) {
+          // Extract chat information
+          const titleElement = chat.querySelector('[role="gridcell"]');
+          const title = titleElement?.textContent?.trim() || 'Unknown Chat';
+          const lastMessageElement = chat.querySelector('[role="gridcell"]:nth-child(2)');
+          const lastMessage = lastMessageElement?.textContent?.trim();
+          const avatarElement = chat.querySelector('img');
+          const avatar = avatarElement?.getAttribute('src');
+
+          // Use a more reliable ID generation
+          const id = chat.getAttribute('data-testid') || 
+                    chat.getAttribute('id') || 
+                    `chat-${title}-${Math.random().toString(36).substr(2, 9)}`; // Use random string for uniqueness
+
+          newChats.push({ 
+            id, 
+            title, 
+            avatar: avatar ?? undefined, 
+            lastMessage,
+            element: chat
+          });
+
+          // Maintain selection state when updating list
+          if (this.selectionMode && this.isSelected(id)) {
+            chat.classList.add('selected');
+          }
+        }
+      });
+
+      this.chats = newChats;
+      this.updateSidebarChatList();
+      this.updateSelectionUI();
+      
+    } catch (error) {
+      console.error('Failed to update chat list:', error);
+      this.uiService.showError(this.getTranslation('Failed to load chat list. Please try refreshing the page.'));
+    }
   }
 
   private updateSidebarChatList() {
@@ -422,7 +391,7 @@ export class ChatManager {
   }
 
   private async archiveSelectedChats() {
-    const loading = this.showLoadingIndicator(this.getTranslation('Archiving chats...'));
+    const loading = this.uiService.showLoading(this.getTranslation('Archiving chats...'));
     try {
       const selectedIds = this.getSelectedChatIds();
       let successCount = 0;
@@ -452,16 +421,16 @@ export class ChatManager {
       }
 
       if (successCount > 0) {
-        this.showToast(this.getTranslation('Successfully archived', { count: successCount }));
+        this.uiService.showToast(this.getTranslation('Successfully archived', { count: successCount }));
         await this.waitForAnimation(800);
         this.updateChatList();
       }
 
       this.toggleSelectionMode();
     } catch (error) {
-      this.showError(this.getTranslation('Failed to archive'));
+      this.uiService.showError(this.getTranslation('Failed to archive'));
     } finally {
-      this.hideLoadingIndicator(loading);
+      this.uiService.hideLoading(loading);
     }
   }
 
@@ -493,7 +462,7 @@ export class ChatManager {
   }
 
   private async deleteSelectedChats() {
-    const loading = this.showLoadingIndicator('Deleting chats...');
+    const loading = this.uiService.showLoading('Deleting chats...');
     try {
       const selectedIds = this.getSelectedChatIds();
       let successCount = 0;
@@ -523,9 +492,7 @@ export class ChatManager {
 
                 // Handle confirmation dialog with multiple possible selectors
                 const confirmButton = document.querySelector(
-                  '[role="dialog"] button[type="submit"], ' +
-                  '[role="dialog"] [aria-label*="Delete"], ' +
-                  '[role="dialog"] div[role="button"]:not([aria-label])'
+                  '[role="dialog"] button[type="submit"], [role="dialog"] [aria-label*="Delete"]'
                 );
 
                 if (confirmButton instanceof HTMLElement) {
@@ -542,16 +509,16 @@ export class ChatManager {
       }
 
       if (successCount > 0) {
-        this.showToast(this.getTranslation('Successfully deleted', { count: successCount }));
+        this.uiService.showToast(this.getTranslation('Successfully deleted', { count: successCount }));
         await this.waitForAnimation(800);
         this.updateChatList();
       }
 
       this.toggleSelectionMode();
     } catch (error) {
-      this.showError(this.getTranslation('Failed to delete'));
+      this.uiService.showError(this.getTranslation('Failed to delete'));
     } finally {
-      this.hideLoadingIndicator(loading);
+      this.uiService.hideLoading(loading);
     }
   }
 
@@ -624,21 +591,6 @@ export class ChatManager {
     }
   }
 
-  private showToast(message: string) {
-    const toast = document.createElement('div');
-    toast.className = 'chat-manager-toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    // Remove toast after 3 seconds
-    setTimeout(() => {
-      toast.classList.add('fade-out');
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 300);
-    }, 3000);
-  }
-
   private updatePopupStats() {
     const stats = {
       selectedCount: this.getSelectedChatIds().length,
@@ -667,8 +619,35 @@ export class ChatManager {
       case 'DELETE_SELECTED':
         this.confirmAction('delete');
         break;
+      case 'GET_LANGUAGE':
+        chrome.runtime.sendMessage({
+          type: 'LANGUAGE_CHANGED',
+          language: this.language
+        });
+        break;
+      case 'UPDATE_LANGUAGE':
+        if (message.language) {
+          this.updateLanguage(message.language);
+        }
+        break;
     }
     this.updatePopupStats();
+  }
+
+  private async updateLanguage(newLanguage: string) {
+    try {
+      this.language = newLanguage;
+      await i18n.changeLanguage(newLanguage);
+      
+      // Notify popup about language change
+      chrome.runtime.sendMessage({
+        type: 'LANGUAGE_CHANGED',
+        language: newLanguage
+      });
+    } catch (error) {
+      console.error('Failed to update language:', error);
+      this.uiService.showError(this.getTranslation('Failed to change language'));
+    }
   }
 
   private selectAllChats() {
@@ -692,7 +671,7 @@ export class ChatManager {
     const selectedCount = this.getSelectedChatIds().length;
     
     if (selectedCount === 0) {
-      this.showToast(this.getTranslation('Please select at least one chat first'));
+      this.uiService.showToast(this.getTranslation('Please select at least one chat first'));
       return;
     }
 
@@ -721,11 +700,11 @@ export class ChatManager {
           <h4>${title}</h4>
           <p>${message}</p>
           <div class="dialog-actions">
-            <button class="action-button" id="dialog-cancel">
-              ${this.getTranslation('Cancel')}
+            <button class="action-button cancel" id="dialog-cancel">
+              <i class="fas fa-times"></i> ${this.getTranslation('Cancel')}
             </button>
-            <button class="action-button danger" id="dialog-confirm">
-              ${this.getTranslation('Confirm')}
+            <button class="action-button confirm" id="dialog-confirm">
+              <i class="fas fa-check"></i> ${this.getTranslation('Confirm')}
             </button>
           </div>
         </div>
@@ -751,4 +730,32 @@ export class ChatManager {
     const chatItem = this.sidebar?.querySelector(`[data-chat-id="${chatId}"]`);
     return chatItem?.classList.contains('selected') || false;
   }
-} 
+
+  private async waitForElement(selector: string): Promise<Element> {
+    return new Promise((resolve, reject) => {
+      const element = document.querySelector(selector);
+      if (element) {
+        return resolve(element);
+      }
+
+      const observer = new MutationObserver(() => {
+        const element = document.querySelector(selector);
+        if (element) {
+          observer.disconnect();
+          resolve(element);
+        }
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+
+      // Set a timeout to reject the promise if the element is not found within a reasonable time
+      setTimeout(() => {
+        observer.disconnect();
+        reject(new Error(`Element with selector "${selector}" not found within the timeout period.`));
+      }, 10000); // Adjust the timeout as necessary
+    });
+  }
+}

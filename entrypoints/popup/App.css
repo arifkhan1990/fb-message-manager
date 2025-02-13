@@ -1,8 +1,147 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.2rem;
   text-align: center;
+}
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.2rem;
+  text-align: center;
+}
+
+/* App.css */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+}
+
+.stats-container {
+  margin-top: 20px;
+  margin-bottom: 16px;
+  background-color: #f0f2f5;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  width: 180px;
+}
+
+.stats-container p {
+  margin: 4px 0;
+  font-size: 1.5em !important;
+  color: #65676b;
+}
+
+.actions-container {
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.actions-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.action-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.action-button.primary {
+  background-color: #1877f2; /* Facebook blue */
+  font-size: 1.1em;
+  justify-content: center;
+}
+
+.action-button.primary:hover {
+  background-color: #44ba9a !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+}
+
+.action-button.secondary {
+  background-color: #3b5998; /* Darker Facebook blue */
+  justify-content: center;
+}
+.action-button.secondary:hover {
+  background-color: #0f2b67 !important; /* Darker Facebook blue */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+}
+.action-button.warning {
+  background-color: #f5a623; /* Orange */
+}
+
+.action-button.danger {
+  background-color: #e4405f; /* Red */
+}
+
+.action-button:disabled {
+  background-color: #cccccc;
+  color: #bcc0c4;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.error-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  padding: 16px;
+  background-color: #f8d7da;
+  border-radius: 6px;
+  margin: 0;
+}
+
+/* Different icons */
+.icon-facebook {
+  color: #1877f2; /* Facebook blue */
+  margin-right: 5px;
+}
+
+.icon-messenger {
+  color: #0084ff; /* Messenger blue */
+  margin-right: 5px;
+}
+
+.icon-archive {
+  color: #f5a623; /* Orange */
+  margin-right: 5px;
+}
+
+.icon-trash {
+  color: #e4405f; /* Red */
+  margin-right: 5px;
+}
+
+.icon-sync {
+  color: #1877f2; /* Facebook blue */
+  margin-right: 5px;
 }
 
 .logo {
@@ -11,9 +150,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #54bc4ae0);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -41,62 +182,115 @@
   color: #888;
 }
 
-.app-container {
-  min-width: 300px;
-  padding: 16px;
-  color: #1c1e21;
-}
-
-h2 {
-  color: #1877f2;
-  margin: 0 0 16px 0;
-  font-size: 1.5em;
-  text-align: center;
-}
-
-.stats-container {
-  background-color: #f0f2f5;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.stats-container p {
-  margin: 4px 0;
-  font-size: 0.9em;
-  color: #65676b;
-}
-
+/* Adjustments for the action buttons layout and colors */
 .actions-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.actions-row.first {
+  display: flex;
+  gap: 10px;
+}
+
+.actions-row.second {
+  display: flex;
+  gap: 10px;
+}
+
+.action-button {
+  background-color: inherit; /* inherit color from icon */
+}
+
+.action-button.toggle-selection {
+  background-color: #007bff;
+}
+
+.action-button.select-all {
+  background-color: #28a745;
+}
+
+.action-button.refresh-chats {
+  background-color: #ffc107;
+}
+.action-button.archive-selected {
+  background-color: #f7b928;
+}
+
+.action-button.delete-selected {
+  background-color: #dc3545;
+}
+
+/* Increase font size for stats */
+.stats-container h2, .stats-container p {
+  font-size: 1em;
+}
+
+/* Ensure button color matches icon color */
+.action-button.toggle-selection .icon-facebook,
+.action-button.select-all .icon-messenger,
+.action-button.refresh-chats .icon-sync,
+.action-button.archive-selected .icon-archive,
+.action-button.delete-selected .icon-trash {
+  color: inherit;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  color: #1c1e21;
+}
+
+.stats-container {
+  margin-top: 20px;
   margin-bottom: 16px;
+  text-align: center;
+  background-color: #f0f2f5;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.actions-container {
+  margin-top: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .action-button {
   padding: 8px 16px;
-  border-radius: 6px;
   border: none;
-  background-color: #1877f2;
+  border-radius: 6px;
   color: white;
+  font-size: 16px;
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
 }
 
-.action-button:hover {
-  background-color: #166fe5;
+.action-button.primary {
+  background-color: #1877f2; /* Facebook blue */
+  padding: 12px 24px;
+  font-size: 1.1em;
 }
 
-.action-button:disabled {
-  background-color: #e4e6eb;
-  color: #BCC0C4;
-  cursor: not-allowed;
+.action-button.primary:hover {
+  background-color: #166fe5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .action-button.warning {
-  background-color: #f7b928;
+  background-color: #f7b928; /* Orange */
 }
 
 .action-button.warning:hover {
@@ -104,14 +298,22 @@ h2 {
 }
 
 .action-button.danger {
-  background-color: #dc3545;
+  background-color: #dc3545; /* Red */
 }
 
 .action-button.danger:hover {
   background-color: #c82333;
 }
 
+.action-button:disabled {
+  background-color: #e4e6eb;
+  color: #BCC0C4;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .error-container {
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -128,22 +330,118 @@ h2 {
 }
 
 .help-text {
-  font-size: 0.85em;
-  color: #65676b;
   text-align: center;
+  color: #65676b;
+  font-size: 0.85em;
   padding: 8px;
   background-color: #f0f2f5;
   border-radius: 6px;
 }
 
-.action-button.primary {
-  background-color: #1877f2;
-  padding: 12px 24px;
-  font-size: 1.1em;
+/* Different icons */
+.icon-facebook,
+.icon-messenger,
+.icon-archive,
+.icon-trash,
+.icon-sync {
+  color: #1877f2; /* Facebook blue */
+  margin-right: 5px;
 }
 
-.action-button.primary:hover {
-  background-color: #166fe5;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.icon-messenger {
+  color: #0084ff; /* Messenger blue */
+}
+
+.icon-archive {
+  color: #f5a623; /* Orange */
+}
+
+.icon-trash {
+  color: #e4405f; /* Red */
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #54bc4ae0);
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+h2 {
+  color: #1877f2;
+  margin: 0 0 16px 0;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.footer {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.footer-text {
+  font-size: 12px;
+}
+
+.footer-text a {
+  text-decoration: none;
+  color: #0078d7;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.language-display {
+  background-color: #f0f2f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #65676b;
+}
+
+.language-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.language-label::before {
+  content: "🌐";
+  font-size: 1rem;
 }

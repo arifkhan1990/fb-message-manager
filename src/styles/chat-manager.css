@@ -420,6 +420,24 @@
   z-index: 10002;
   animation: slide-down 0.3s ease;
 }
+/* Add CSS for dialog actions buttons */
+.chat-manager-dialog .dialog-actions .cancel {
+  background-color: #f44336; /* Red color for cancel */
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.chat-manager-dialog .dialog-actions .confirm {
+  background-color: #4caf50; /* Green color for confirm */
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.chat-manager-dialog .dialog-actions button i {
+  margin-right: 5px;
+}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
