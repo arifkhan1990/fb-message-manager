@@ -190,7 +190,7 @@ function HelpText({ getTranslation }: HelpTextProps) {
 
 function Footer() {
   return (
-    <footer className="footer-container" style={{marginTop:'35px'}}>
+    <footer className="footer-container">
       Developed by <IoHeartSharp size={14} />
       <a href="https://arif-portfolio-orcin.vercel.app/" target="_blank" rel="noopener noreferrer">
         Arif Khan

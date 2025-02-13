@@ -12,17 +12,6 @@
 }
 
 /* App.css */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  min-width: 300px;
-}
 
 .stats-container {
   margin-top: 20px;
@@ -242,7 +231,7 @@
   align-items: center;
   font-family: Arial, sans-serif;
   background-color: #f5f5f5;
-  padding: 20px;
+  padding: 10px;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   min-width: 300px;
@@ -332,7 +321,7 @@
 .help-text {
   text-align: center;
   color: #65676b;
-  font-size: 0.85em;
+  font-size: 1em;
   padding: 8px;
   background-color: #f0f2f5;
   border-radius: 6px;
@@ -418,6 +407,10 @@ h2 {
 .footer-text a {
   text-decoration: none;
   color: #0078d7;
+}
+
+.footer-container {
+  margin-top: 15px;
 }
 
 .header {

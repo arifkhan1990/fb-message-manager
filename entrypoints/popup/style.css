@@ -13,12 +13,6 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
-.app-container {
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  background-color: #f4f4f9;
-  color: #333;
-}
 
 .action-button {
   padding: 8px 16px;
