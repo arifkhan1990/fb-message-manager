@@ -4,7 +4,7 @@
 
 A powerful browser extension that helps you efficiently manage Facebook Messenger conversations with bulk actions support and multilingual interface.
 
-![Facebook message manager](assets/193930.png)
+![Facebook message manager](193930.png)
 
 ## ✨ Features
 
