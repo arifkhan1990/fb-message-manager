@@ -1,11 +1,10 @@
-I'll help you update the README.md file with comprehensive documentation. Here's how to modify it:
 
 ```markdown:README.md
 # Facebook Chat Manager
 
 A powerful browser extension that helps you efficiently manage Facebook Messenger conversations with bulk actions support and multilingual interface.
 
-![Facebook Chat Manager](https://github.com/arifkhan1990/fb-message-manager/blob/4e809a639095688176f0c3c6495ebb637c5987d7/assets/193930.png)
+![img_alt](https://github.com/arifkhan1990/fb-message-manager/blob/4e809a639095688176f0c3c6495ebb637c5987d7/assets/193930.png)
 
 ## ✨ Features
 
